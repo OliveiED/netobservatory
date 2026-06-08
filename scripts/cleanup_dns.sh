@@ -1,10 +1,8 @@
 #!/bin/bash
 
-psql -U netobservatory -d netobservatory <<EOF
-
+psql -U netobservatory \
+     -d netobservatory \
+     -c "
 DELETE FROM dns_queries
-WHERE timestamp < NOW() - INTERVAL '3 days';
-
-VACUUM ANALYZE dns_queries;
-
-EOF
+WHERE timestamp < NOW() - INTERVAL '30 days';
+"

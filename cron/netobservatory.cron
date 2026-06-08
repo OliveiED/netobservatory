@@ -1,0 +1,11 @@
+# Agregação horária
+
+0 * * * * cd /opt/netobservatory && /opt/netobservatory/venv/bin/python -m workers.hourly_aggregation
+
+# Limpeza diária
+
+0 3 * * * /opt/netobservatory/scripts/cleanup_dns.sh
+
+# Segurança extra
+
+0 3 * * * psql -U netobservatory -d netobservatory -c "DELETE FROM dns_queries WHERE timestamp < NOW() - INTERVAL '30 days';"

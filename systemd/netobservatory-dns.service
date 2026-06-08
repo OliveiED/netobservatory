@@ -1,0 +1,13 @@
+[Unit]
+Description=NetObservatory DNS Collector
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/netobservatory
+ExecStart=/opt/netobservatory/venv/bin/python -m collectors.dns_collector
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
