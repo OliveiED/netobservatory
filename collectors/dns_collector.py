@@ -8,7 +8,6 @@ from datetime import datetime, timezone
 from app.services.database import get_connection
 from app.services.geoip_service import get_geoip_data
 
-
 INTERFACE = "ens33"
 
 
@@ -25,7 +24,9 @@ def save_dns_query(
     country=None,
     city=None,
     asn=None,
-    as_org=None
+    as_org=None,
+    client_ip=None,
+    dns_server_ip=None
 ):
 
     conn = get_connection()
@@ -43,10 +44,12 @@ def save_dns_query(
             country,
             city,
             asn,
-            as_org
+            as_org,
+            client_ip,
+            dns_server_ip
         )
         VALUES (
-            %s,%s,%s,%s,%s,%s,%s,%s,%s,%s
+            %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s
         )
         """,
         (
@@ -59,7 +62,9 @@ def save_dns_query(
             country,
             city,
             asn,
-            as_org
+            as_org,
+            client_ip,
+            dns_server_ip
         )
     )
 
@@ -82,7 +87,7 @@ def process_packet(packet):
 
         dns = packet[DNS]
 
-        # Apenas respostas DNS
+        # SOMENTE RESPOSTAS DNS
         if dns.qr != 1:
             return
 
@@ -115,19 +120,28 @@ def process_packet(packet):
             "UNKNOWN"
         )
 
-        # Sem respostas
+        # Em respostas DNS:
+        # src_ip = DNS Server
+        # dst_ip = Cliente
+
+        client_ip = dst_ip
+        dns_server_ip = src_ip
+
+        # Sem resposta
         if dns.ancount == 0:
 
             save_dns_query(
                 src_ip=src_ip,
                 dst_ip=dst_ip,
                 domain=domain,
-                query_type=query_type
+                query_type=query_type,
+                client_ip=client_ip,
+                dns_server_ip=dns_server_ip
             )
 
             return
 
-        # Percorre respostas DNS
+        # Percorre respostas
         for i in range(dns.ancount):
 
             try:
@@ -136,11 +150,11 @@ def process_packet(packet):
 
                 resolved_ip = None
 
-                # A
+                # Registro A
                 if answer.type == 1:
                     resolved_ip = str(answer.rdata)
 
-                # AAAA
+                # Registro AAAA
                 elif answer.type == 28:
                     resolved_ip = str(answer.rdata)
 
@@ -155,12 +169,11 @@ def process_packet(packet):
                 as_org = geo.get("as_org")
 
                 print(
-                    f"[DNS] {src_ip} -> {domain} "
-                    f"[TYPE: {query_type}] "
-                    f"[IP: {resolved_ip}] "
-                    f"[{country}] "
-                    f"[ASN {asn}] "
-                    f"[{as_org}]"
+                    f"[DNS] CLIENT={client_ip} "
+                    f"DOMAIN={domain} "
+                    f"TYPE={query_type} "
+                    f"RESOLVED={resolved_ip} "
+                    f"ASN={asn}"
                 )
 
                 save_dns_query(
@@ -172,7 +185,9 @@ def process_packet(packet):
                     country=country,
                     city=city,
                     asn=asn,
-                    as_org=as_org
+                    as_org=as_org,
+                    client_ip=client_ip,
+                    dns_server_ip=dns_server_ip
                 )
 
             except Exception as e:
