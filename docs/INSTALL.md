@@ -1,93 +1,130 @@
-# NetObservatory
+# 🔭 NetObservatory
 
-Plataforma de observabilidade DNS desenvolvida para coletar, armazenar, analisar e visualizar consultas DNS em tempo real.
+Plataforma de Observabilidade DNS para ISPs, Datacenters e Redes Corporativas.
 
-O projeto captura tráfego DNS diretamente da rede, enriquece os dados com informações de GeoIP e ASN e disponibiliza métricas avançadas através de dashboards Grafana.
+O NetObservatory coleta consultas DNS em tempo real diretamente da rede, enriquece os dados com informações de GeoIP e ASN e disponibiliza dashboards avançados para análise de comportamento, desempenho e segurança DNS.
 
 ---
 
-## Funcionalidades
+## ✨ Recursos
 
-* Captura de consultas DNS em tempo real
+### DNS Analytics
+
+* Captura DNS em tempo real
 * Suporte IPv4 e IPv6
-* Identificação do cliente DNS
-* Identificação do servidor DNS
-* Resolução de registros A e AAAA
-* GeoIP (País e Cidade)
-* ASN e Organização
-* Estatísticas de domínios
-* Estatísticas por cliente
-* Estatísticas por ASN
-* Top domínios consultados
-* Top IPs resolvidos
-* Clientes ativos
-* Dashboards avançados Grafana
-* Banco PostgreSQL
+* Registros A e AAAA
+* Top Domínios
+* Top Clientes
+* Clientes Ativos
+* Consultas por minuto
+* Tipos de consulta DNS
 
----
+### GeoIP Analytics
 
-## Tecnologias Utilizadas
+* Países acessados
+* Cidades acessadas
+* ASN de destino
+* Organização responsável pelo ASN
 
-### Backend
+### Dashboards Grafana
 
-* Python 3.11+
-* Scapy
-* PostgreSQL
-* Psycopg2
-
-### Visualização
-
-* Grafana
-* Business Charts
-* Geomap
-
-### Banco de Dados
-
-* PostgreSQL
+* DNS Overview
+* Top Domains
+* Top Clients
+* Active Clients
+* ASN Analytics
+* GeoIP Analytics
+* Resolved IP Analytics
 
 ### Enriquecimento
 
-* GeoLite2 ASN
 * GeoLite2 City
+* GeoLite2 ASN
+* ASN Organization Lookup
 
 ---
 
-## Arquitetura
+# 🏗 Arquitetura
 
-Cliente DNS
-↓
+```text
+Clientes
+    │
+    ▼
 Servidor DNS (Unbound)
-↓
+    │
+    ▼
 NetObservatory Collector
-↓
+    │
+    ▼
 PostgreSQL
-↓
-Grafana
+    │
+    ▼
+Grafana Dashboards
+```
 
 ---
 
-## Requisitos
+# 🛠 Tecnologias
 
-### Sistema Operacional
+| Componente     | Tecnologia       |
+| -------------- | ---------------- |
+| Backend        | Python           |
+| Packet Capture | Scapy            |
+| Banco          | PostgreSQL       |
+| Dashboards     | Grafana          |
+| GeoIP          | MaxMind GeoLite2 |
+| Versionamento  | Git              |
+| Hospedagem     | Linux            |
+
+---
+
+# 📋 Requisitos
+
+### Sistemas Operacionais
 
 * Debian 12+
 * Ubuntu 22.04+
 * Ubuntu 24.04+
 
-### Pacotes necessários
+### Dependências
 
-* Python 3
-* Python venv
-* PostgreSQL
+* Python 3.11+
+* PostgreSQL 15+
 * Git
+* Pip
+* Virtual Environment (venv)
 
 ---
 
-# Instalação
+# 🚀 Instalação
 
-## 1 - Clonar o Projeto
+## 1. Instalar dependências
+
+Debian / Ubuntu:
 
 ```bash
+apt update
+
+apt install -y \
+git \
+python3 \
+python3-pip \
+python3-venv \
+postgresql \
+postgresql-contrib \
+tcpdump \
+libpcap-dev
+```
+
+---
+
+## 2. Clonar o projeto
+
+```bash
+mkdir -p /root/projects
+
+cd /root/projects
+
 git clone https://github.com/OliveiED/netobservatory.git
 
 cd netobservatory
@@ -95,7 +132,7 @@ cd netobservatory
 
 ---
 
-## 2 - Executar instalação automática
+## 3. Executar instalação automática
 
 ```bash
 chmod +x install/install.sh
@@ -103,15 +140,15 @@ chmod +x install/install.sh
 ./install/install.sh
 ```
 
-O script realiza:
+O script cria:
 
-* Criação do ambiente virtual Python
-* Instalação das dependências
-* Configuração inicial do projeto
+* Ambiente virtual Python
+* Instala dependências
+* Estrutura inicial do projeto
 
 ---
 
-## 3 - Criar Banco PostgreSQL
+## 4. Criar banco PostgreSQL
 
 ```bash
 sudo -u postgres createdb netobservatory
@@ -119,7 +156,7 @@ sudo -u postgres createdb netobservatory
 
 ---
 
-## 4 - Criar Estrutura do Banco
+## 5. Criar estrutura do banco
 
 ```bash
 psql -U postgres netobservatory < schema.sql
@@ -127,11 +164,11 @@ psql -U postgres netobservatory < schema.sql
 
 ---
 
-## 5 - Configurar Banco
+## 6. Configurar conexão PostgreSQL
 
 Editar:
 
-```bash
+```text
 app/services/database.py
 ```
 
@@ -146,16 +183,14 @@ DB_PASSWORD = "senha"
 
 ---
 
-## 6 - Configurar GeoIP
+## 7. Instalar GeoLite2
 
-Copiar os bancos MaxMind:
+Baixar:
 
-```text
-GeoLite2-ASN.mmdb
-GeoLite2-City.mmdb
-```
+* GeoLite2-ASN.mmdb
+* GeoLite2-City.mmdb
 
-para:
+e copiar para:
 
 ```text
 database/geoip/
@@ -163,7 +198,7 @@ database/geoip/
 
 ---
 
-# Inicialização
+# ▶️ Executando
 
 Ativar ambiente virtual:
 
@@ -171,35 +206,34 @@ Ativar ambiente virtual:
 source venv/bin/activate
 ```
 
-Iniciar coletor DNS:
+Executar coletor:
 
 ```bash
 python -m collectors.dns_collector
 ```
 
----
+Saída esperada:
 
-## Execução em segundo plano
-
-Exemplo utilizando screen:
-
-```bash
-screen -S netobservatory
-
-source venv/bin/activate
-
-python -m collectors.dns_collector
-```
-
-Desanexar:
-
-```bash
-CTRL+A D
+```text
+[*] NetObservatory DNS Collector Started
+[*] Listening on interface: ens33
 ```
 
 ---
 
-# Estrutura do Projeto
+# 🔄 Execução Automática
+
+Exemplo utilizando cron:
+
+```bash
+@reboot cd /root/projects/netobservatory && \
+/root/projects/netobservatory/venv/bin/python \
+-m collectors.dns_collector
+```
+
+---
+
+# 📂 Estrutura do Projeto
 
 ```text
 netobservatory/
@@ -212,82 +246,86 @@ netobservatory/
 ├── collectors/
 │   └── dns_collector.py
 │
+├── workers/
+│
 ├── database/
-│   ├── geoip/
-│   └── schema.sql
+│   └── geoip/
 │
 ├── install/
 │   └── install.sh
 │
-├── workers/
-│
 ├── grafana/
 │
-├── venv/
+├── schema.sql
+│
+├── requirements.txt
 │
 └── README.md
 ```
 
 ---
 
-# Principais Métricas
+# 📊 Métricas Disponíveis
 
 ## DNS
 
 * Total de consultas
-* Consultas por segundo
 * Top domínios
 * Top clientes
 * Clientes ativos
-* Tipos de registros DNS
-
-## GeoIP
-
-* Países mais acessados
-* Cidades mais acessadas
+* Domínios únicos
+* Tipos de consultas
 
 ## ASN
 
-* ASN mais consultados
-* Organizações mais consultadas
+* Top ASN
+* ASN por consultas
+* ASN por domínios
+* Organizações mais acessadas
+
+## GeoIP
+
+* Países
+* Cidades
+* ASN de destino
 
 ## Resolução
 
-* Top IPs resolvidos
-* Distribuição IPv4
-* Distribuição IPv6
+* IPs mais resolvidos
+* IPv4 x IPv6
 
 ---
 
-# Dashboards
+# 📈 Grafana
 
-O projeto possui dashboards Grafana para:
+O projeto utiliza Grafana para visualização dos dados.
+
+Dashboards disponíveis:
 
 * DNS Overview
-* Clientes DNS
+* Top Domains
+* Top Clients
+* Active Clients
 * ASN Analytics
 * GeoIP Analytics
-* Top Domínios
 * Top Resolved IPs
-* Clientes Ativos
-* Distribuição de Consultas
 
 ---
 
-# Segurança
+# 🔒 Segurança
 
-Recomendado:
+Recomendações:
 
-* Executar o coletor com usuário dedicado
+* Utilizar usuário dedicado
 * Restringir acesso ao PostgreSQL
-* Utilizar SSH com chaves ED25519
-* Manter GeoLite2 atualizado
+* Utilizar autenticação SSH por chave
+* Atualizar regularmente os bancos GeoLite2
 
 ---
 
-# Autor
+# 👨‍💻 Autor
 
 Evandro Duarte
 
-Projeto criado para monitoramento, observabilidade e análise avançada de tráfego DNS.
+Projeto desenvolvido para observabilidade DNS, análise de tráfego e inteligência de rede em ambientes ISP e corporativos.
 
