@@ -5,7 +5,7 @@ from scapy.layers.inet6 import IPv6
 
 from datetime import datetime, timezone
 
-from app.services.database import get_connection
+from app.services.database import get_connection, release_connection
 from app.services.geoip_service import get_geoip_data
 
 INTERFACE = "ens33"
@@ -14,7 +14,6 @@ INTERFACE = "ens33"
 # ==========================================
 # DATABASE INSERT
 # ==========================================
-
 def save_dns_query(
     src_ip,
     dst_ip,
@@ -30,49 +29,54 @@ def save_dns_query(
 ):
 
     conn = get_connection()
-    cur = conn.cursor()
 
-    cur.execute(
-        """
-        INSERT INTO dns_queries (
-            timestamp,
-            src_ip,
-            dst_ip,
-            domain,
-            query_type,
-            resolved_ip,
-            country,
-            city,
-            asn,
-            as_org,
-            client_ip,
-            dns_server_ip
+    try:
+
+        cur = conn.cursor()
+
+        cur.execute(
+            """
+            INSERT INTO dns_queries (
+                timestamp,
+                src_ip,
+                dst_ip,
+                domain,
+                query_type,
+                resolved_ip,
+                country,
+                city,
+                asn,
+                as_org,
+                client_ip,
+                dns_server_ip
+            )
+            VALUES (
+                %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s
+            )
+            """,
+            (
+                datetime.now(timezone.utc),
+                src_ip,
+                dst_ip,
+                domain,
+                query_type,
+                resolved_ip,
+                country,
+                city,
+                asn,
+                as_org,
+                client_ip,
+                dns_server_ip
+            )
         )
-        VALUES (
-            %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s
-        )
-        """,
-        (
-            datetime.now(timezone.utc),
-            src_ip,
-            dst_ip,
-            domain,
-            query_type,
-            resolved_ip,
-            country,
-            city,
-            asn,
-            as_org,
-            client_ip,
-            dns_server_ip
-        )
-    )
 
-    conn.commit()
+        conn.commit()
 
-    cur.close()
-    conn.close()
+        cur.close()
 
+    finally:
+
+        release_connection(conn)
 
 # ==========================================
 # DNS PROCESSING

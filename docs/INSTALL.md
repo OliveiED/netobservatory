@@ -1,106 +1,42 @@
-# 🔭 NetObservatory
+# NetObservatory DNS
 
-Plataforma de Observabilidade DNS para ISPs, Datacenters e Redes Corporativas.
-
-O NetObservatory coleta consultas DNS em tempo real diretamente da rede, enriquece os dados com informações de GeoIP e ASN e disponibiliza dashboards avançados para análise de comportamento, desempenho e segurança DNS.
+DNS Observability Platform for ISPs, NOCs and Enterprise Networks.
 
 ---
 
-## ✨ Recursos
+# Overview
 
-### DNS Analytics
+NetObservatory DNS is a passive DNS observability platform designed to collect, enrich, store and visualize DNS traffic from recursive resolvers such as Unbound, BIND and PowerDNS.
 
-* Captura DNS em tempo real
-* Suporte IPv4 e IPv6
-* Registros A e AAAA
-* Top Domínios
-* Top Clientes
-* Clientes Ativos
-* Consultas por minuto
-* Tipos de consulta DNS
-
-### GeoIP Analytics
-
-* Países acessados
-* Cidades acessadas
-* ASN de destino
-* Organização responsável pelo ASN
-
-### Dashboards Grafana
-
-* DNS Overview
-* Top Domains
-* Top Clients
-* Active Clients
-* ASN Analytics
-* GeoIP Analytics
-* Resolved IP Analytics
-
-### Enriquecimento
-
-* GeoLite2 City
-* GeoLite2 ASN
-* ASN Organization Lookup
+The platform captures DNS responses in real time, enriches them with ASN and GeoIP information, stores the data in PostgreSQL and provides advanced analytics through Grafana dashboards.
 
 ---
 
-# 🏗 Arquitetura
+# Requirements
 
-```text
-Clientes
-    │
-    ▼
-Servidor DNS (Unbound)
-    │
-    ▼
-NetObservatory Collector
-    │
-    ▼
-PostgreSQL
-    │
-    ▼
-Grafana Dashboards
-```
+## Operating System
 
----
-
-# 🛠 Tecnologias
-
-| Componente     | Tecnologia       |
-| -------------- | ---------------- |
-| Backend        | Python           |
-| Packet Capture | Scapy            |
-| Banco          | PostgreSQL       |
-| Dashboards     | Grafana          |
-| GeoIP          | MaxMind GeoLite2 |
-| Versionamento  | Git              |
-| Hospedagem     | Linux            |
-
----
-
-# 📋 Requisitos
-
-### Sistemas Operacionais
+Supported distributions:
 
 * Debian 12+
 * Ubuntu 22.04+
 * Ubuntu 24.04+
 
-### Dependências
+## Software
+
+Required:
 
 * Python 3.11+
 * PostgreSQL 15+
 * Git
-* Pip
-* Virtual Environment (venv)
+* tcpdump
+* libpcap-dev
 
 ---
 
-# 🚀 Instalação
+# Installation
 
-## 1. Instalar dependências
-
-Debian / Ubuntu:
+## 1. Install Dependencies
 
 ```bash
 apt update
@@ -118,21 +54,21 @@ libpcap-dev
 
 ---
 
-## 2. Clonar o projeto
+## 2. Clone Repository
 
 ```bash
-mkdir -p /root/projects
+mkdir -p /opt
 
-cd /root/projects
+cd /opt
 
-git clone https://github.com/OliveiED/netobservatory.git
+git clone git@github.com:OliveiED/netobservatory.git
 
 cd netobservatory
 ```
 
 ---
 
-## 3. Executar instalação automática
+## 3. Run Automatic Installation
 
 ```bash
 chmod +x install/install.sh
@@ -140,23 +76,35 @@ chmod +x install/install.sh
 ./install/install.sh
 ```
 
-O script cria:
+This script will:
 
-* Ambiente virtual Python
-* Instala dependências
-* Estrutura inicial do projeto
+* Create Python Virtual Environment
+* Install Python Dependencies
+* Prepare Project Structure
 
 ---
 
-## 4. Criar banco PostgreSQL
+## 4. Create PostgreSQL Database
 
 ```bash
+sudo -u postgres createuser netobservatory
+
 sudo -u postgres createdb netobservatory
+```
+
+Optional:
+
+```bash
+sudo -u postgres psql
+```
+
+```sql
+ALTER USER netobservatory WITH PASSWORD 'StrongPassword';
 ```
 
 ---
 
-## 5. Criar estrutura do banco
+## 5. Create Database Structure
 
 ```bash
 psql -U postgres netobservatory < schema.sql
@@ -164,55 +112,101 @@ psql -U postgres netobservatory < schema.sql
 
 ---
 
-## 6. Configurar conexão PostgreSQL
+## 6. Configure Environment Variables
 
-Editar:
+Create:
 
-```text
-app/services/database.py
+```bash
+cp .env.example .env
 ```
 
-Exemplo:
+Edit:
 
-```python
-DB_HOST = "localhost"
-DB_NAME = "netobservatory"
-DB_USER = "postgres"
-DB_PASSWORD = "senha"
+```bash
+vim .env
+```
+
+Example:
+
+```env
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=netobservatory
+DB_USER=netobservatory
+DB_PASS=StrongPassword
 ```
 
 ---
 
-## 7. Instalar GeoLite2
+## 7. Install GeoLite2 Databases
 
-Baixar:
+Download:
 
 * GeoLite2-ASN.mmdb
 * GeoLite2-City.mmdb
 
-e copiar para:
+Create directory:
+
+```bash
+mkdir -p /root/geoip
+```
+
+Copy files:
 
 ```text
-database/geoip/
+/root/geoip/GeoLite2-ASN.mmdb
+/root/geoip/GeoLite2-City.mmdb
 ```
 
 ---
 
-# ▶️ Executando
+## 8. Configure Capture Interface
 
-Ativar ambiente virtual:
+Edit:
+
+```bash
+collectors/dns_collector.py
+```
+
+Locate:
+
+```python
+INTERFACE = "ens33"
+```
+
+Adjust according to your environment.
+
+Examples:
+
+```python
+INTERFACE = "eth0"
+```
+
+```python
+INTERFACE = "ens33"
+```
+
+```python
+INTERFACE = "bond0"
+```
+
+---
+
+# Starting Collector
+
+Activate virtual environment:
 
 ```bash
 source venv/bin/activate
 ```
 
-Executar coletor:
+Start manually:
 
 ```bash
 python -m collectors.dns_collector
 ```
 
-Saída esperada:
+Expected output:
 
 ```text
 [*] NetObservatory DNS Collector Started
@@ -221,86 +215,161 @@ Saída esperada:
 
 ---
 
-# 🔄 Execução Automática
+# Configure Systemd Service
 
-Exemplo utilizando cron:
+Create:
 
 ```bash
-@reboot cd /root/projects/netobservatory && \
-/root/projects/netobservatory/venv/bin/python \
--m collectors.dns_collector
+vim /etc/systemd/system/netobservatory-dns.service
+```
+
+Content:
+
+```ini
+[Unit]
+Description=NetObservatory DNS Collector
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/netobservatory
+ExecStart=/opt/netobservatory/venv/bin/python -m collectors.dns_collector
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Reload services:
+
+```bash
+systemctl daemon-reload
+```
+
+Enable service:
+
+```bash
+systemctl enable netobservatory-dns
+```
+
+Start service:
+
+```bash
+systemctl start netobservatory-dns
+```
+
+Check status:
+
+```bash
+systemctl status netobservatory-dns
 ```
 
 ---
 
-# 📂 Estrutura do Projeto
+# Configure Aggregation Worker
 
-```text
-netobservatory/
+Edit crontab:
 
-├── app/
-│   ├── services/
-│   ├── models/
-│   └── utils/
-│
-├── collectors/
-│   └── dns_collector.py
-│
-├── workers/
-│
-├── database/
-│   └── geoip/
-│
-├── install/
-│   └── install.sh
-│
-├── grafana/
-│
-├── schema.sql
-│
-├── requirements.txt
-│
-└── README.md
+```bash
+crontab -e
+```
+
+Add:
+
+```cron
+0 * * * * cd /opt/netobservatory && /opt/netobservatory/venv/bin/python -m workers.hourly_aggregation
 ```
 
 ---
 
-# 📊 Métricas Disponíveis
+# Configure Data Retention
 
-## DNS
+Create cleanup script:
 
-* Total de consultas
-* Top domínios
-* Top clientes
-* Clientes ativos
-* Domínios únicos
-* Tipos de consultas
+```bash
+vim /opt/netobservatory/scripts/cleanup_dns.sh
+```
 
-## ASN
+Content:
 
-* Top ASN
-* ASN por consultas
-* ASN por domínios
-* Organizações mais acessadas
+```bash
+#!/bin/bash
 
-## GeoIP
+psql -U netobservatory -d netobservatory -c "
+DELETE
+FROM dns_queries
+WHERE timestamp < NOW() - INTERVAL '30 days';
+"
+```
 
-* Países
-* Cidades
-* ASN de destino
+Grant permission:
 
-## Resolução
+```bash
+chmod +x /opt/netobservatory/scripts/cleanup_dns.sh
+```
 
-* IPs mais resolvidos
-* IPv4 x IPv6
+Add to crontab:
+
+```cron
+0 3 * * * /opt/netobservatory/scripts/cleanup_dns.sh
+```
 
 ---
 
-# 📈 Grafana
+# Verify Installation
 
-O projeto utiliza Grafana para visualização dos dados.
+Verify service:
 
-Dashboards disponíveis:
+```bash
+systemctl status netobservatory-dns
+```
+
+Verify collector logs:
+
+```bash
+journalctl -fu netobservatory-dns
+```
+
+Verify inserts:
+
+```sql
+SELECT COUNT(*)
+FROM dns_queries;
+```
+
+Verify latest records:
+
+```sql
+SELECT
+    timestamp,
+    client_ip,
+    domain,
+    resolved_ip,
+    asn
+FROM dns_queries
+ORDER BY id DESC
+LIMIT 10;
+```
+
+---
+
+# Performance Features
+
+Current optimizations:
+
+* PostgreSQL Connection Pool
+* GeoIP Memory Cache
+* ASN Cache
+* Optimized PostgreSQL Indexes
+* IPv4 Support
+* IPv6 Support
+
+---
+
+# Grafana Dashboards
+
+Available dashboards:
 
 * DNS Overview
 * Top Domains
@@ -309,23 +378,89 @@ Dashboards disponíveis:
 * ASN Analytics
 * GeoIP Analytics
 * Top Resolved IPs
+* Query Type Distribution
 
 ---
 
-# 🔒 Segurança
+# Project Structure
 
-Recomendações:
+```text
+netobservatory/
 
-* Utilizar usuário dedicado
-* Restringir acesso ao PostgreSQL
-* Utilizar autenticação SSH por chave
-* Atualizar regularmente os bancos GeoLite2
+├── app/
+│   ├── services/
+│   │   ├── database.py
+│   │   └── geoip_service.py
+│   │
+│   └── config/
+│
+├── collectors/
+│   └── dns_collector.py
+│
+├── workers/
+│   └── hourly_aggregation.py
+│
+├── scripts/
+│   └── cleanup_dns.sh
+│
+├── docs/
+│   ├── INSTALL.md
+│   └── DASH-ESTRUTURA-CONSULTA.md
+│
+├── install/
+│   └── install.sh
+│
+├── schema.sql
+│
+├── requirements.txt
+│
+└── venv/
+```
 
 ---
 
-# 👨‍💻 Autor
+# Current Version
+
+## v1.1.0
+
+Implemented:
+
+* DNS Collection
+* IPv4 Analytics
+* IPv6 Analytics
+* ASN Analytics
+* GeoIP Analytics
+* Client IP Tracking
+* DNS Server Tracking
+* PostgreSQL Connection Pool
+* GeoIP Memory Cache
+* Automated Retention
+* Hourly Aggregation
+
+---
+
+# Roadmap
+
+## v1.2.0
+
+* Bulk Insert Processing
+* Buffered DNS Ingestion
+
+## v1.3.0
+
+* PostgreSQL Partitioning
+
+## v2.0.0
+
+* Interactive Geographic Maps
+* Native Web Interface
+* Multi-Tenant Support
+
+---
+
+# Author
 
 Evandro Duarte
 
-Projeto desenvolvido para observabilidade DNS, análise de tráfego e inteligência de rede em ambientes ISP e corporativos.
+NetObservatory DNS - Advanced DNS Observability Platform
 
